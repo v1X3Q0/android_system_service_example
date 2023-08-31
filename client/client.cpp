@@ -149,7 +149,9 @@ int main(int argc, char *argv[])
     sp<IBinder> binder;
     sp<ProcessState> proc(ProcessState::self());
     //get service manager
-    sp<IServiceManager> sm = defaultServiceManager();
+    init_binderglobs();
+    // sp<IServiceManager> sm = defaultServiceManager();
+    sp<IServiceManager> sm = defaultservicemanager;
 
     int fd = 0;
     int epfd = 0;
@@ -161,7 +163,6 @@ int main(int argc, char *argv[])
     list_available_services(sm);
     fd = *(int*)(*((void**)&proc) + 4);
     epfd = epoll_create(1000);
-    init_binderglobs();
 
     do{
         //Search service by SERVICE_NAME, instigates a write IOCTL
