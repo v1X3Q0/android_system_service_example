@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
     sp<ProcessState> proc(ProcessState::self());
     //get service manager
     init_binderglobs();
-    // sp<IServiceManager> sm = defaultServiceManager();
-    sp<IServiceManager> sm = defaultservicemanager;
+    sp<IServiceManager> sm = defaultServiceManager();
+    // sp<IServiceManager> sm = defaultservicemanager;
 
     int fd = 0;
     int epfd = 0;
