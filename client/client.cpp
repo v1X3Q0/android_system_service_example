@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     void *ptr = 0;
     struct epoll_event event = {.events = EPOLLIN};
 
-    list_available_services(sm);
+    // list_available_services(sm);
     fd = *(int*)(*((void**)&proc) + 4);
     epfd = epoll_create(1000);
 
